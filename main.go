@@ -14,6 +14,10 @@ type tokenPayload struct {
 	Token string `json:"token"`
 }
 
+type filenamePayload struct {
+	Filename string `json:"filename"`
+}
+
 func main() {
 	err := godotenv.Load()
 	if err != nil {
@@ -33,14 +37,14 @@ func main() {
 }
 
 func getToken(c *gin.Context) {
-	filename := c.PostForm("filename")
-	if filename == "" {
+	var filenamePayload filenamePayload
+	if err := c.BindJSON(&filenamePayload); err != nil {
 		log.Print("Bad Request. Filename not provided")
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Filename required"})
 		return
 	}
 
-	credentials := option.WithCredentialsFile(filename)
+	credentials := option.WithCredentialsFile(filenamePayload.Filename)
 	application, err := firebase.NewApp(c, nil, credentials)
 	if err != nil {
 		log.Fatalf("error initializing app: $v\n", err)
@@ -56,7 +60,7 @@ func getToken(c *gin.Context) {
 		return
 	}
 
-	token, err := client.CustomToken(c, filename)
+	token, err := client.CustomToken(c, filenamePayload.Filename)
 
 	if err != nil {
 		log.Print("error getting token: $v\n", err)
